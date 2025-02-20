@@ -3,18 +3,17 @@ import * as dotenv from "dotenv";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { storage } from "./storage";
 
 dotenv.config();
 
-// In-memory store for notes
+// Interface for Note type
 interface Note {
   id: string;
   content: string;
   createdAt: Date;
   updatedAt: Date;
 }
-
-const notes: Map<string, Note> = new Map();
 
 const app = express();
 const httpServer = createServer(app);
@@ -46,7 +45,12 @@ app.get("/", (req, res) => {
 
 // Test endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Server is running" });
+  res.json({
+    status: "ok",
+    message: "Server is running",
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Notes endpoints
@@ -67,7 +71,7 @@ app.post("/api/notes", (req, res) => {
       updatedAt: new Date(),
     };
 
-    notes.set(noteId, note);
+    storage.set(noteId, note);
     console.log(`Created note: ${noteId}`);
     res.status(201).json(note);
   } catch (error) {
@@ -82,16 +86,22 @@ app.post("/api/notes", (req, res) => {
 app.get("/api/notes/:id", (req, res) => {
   try {
     const { id } = req.params;
-    const note = notes.get(id);
+    const note = storage.get(id);
 
     if (!note) {
-      return res.status(404).json({ error: "Note not found" });
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Note not found",
+      });
     }
 
     res.json(note);
   } catch (error) {
     console.error("Error getting note:", error);
-    res.status(500).json({ error: "Failed to get note" });
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to get note",
+    });
   }
 });
 
@@ -100,13 +110,19 @@ app.put("/api/notes/:id", (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
 
-    if (!content) {
-      return res.status(400).json({ error: "Content is required" });
+    if (!content && content !== "") {
+      return res.status(400).json({
+        error: "Bad Request",
+        message: "Content is required",
+      });
     }
 
-    const note = notes.get(id);
+    const note = storage.get(id);
     if (!note) {
-      return res.status(404).json({ error: "Note not found" });
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Note not found",
+      });
     }
 
     const updatedNote = {
@@ -115,7 +131,7 @@ app.put("/api/notes/:id", (req, res) => {
       updatedAt: new Date(),
     };
 
-    notes.set(id, updatedNote);
+    storage.set(id, updatedNote);
     console.log(`Updated note: ${id}`);
 
     // Broadcast the update to all connected clients in the room
@@ -124,7 +140,10 @@ app.put("/api/notes/:id", (req, res) => {
     res.json(updatedNote);
   } catch (error) {
     console.error("Error updating note:", error);
-    res.status(500).json({ error: "Failed to update note" });
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to update note",
+    });
   }
 });
 
@@ -137,7 +156,7 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.id} joined note: ${noteId}`);
 
     // Send current note content to the newly joined user
-    const note = notes.get(noteId);
+    const note = storage.get(noteId);
     if (note) {
       socket.emit("note:update", { noteId, content: note.content });
     }
@@ -149,10 +168,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("note:update", (update: { noteId: string; content: string }) => {
-    // Update the note in memory
-    const note = notes.get(update.noteId);
+    // Update the note in storage
+    const note = storage.get(update.noteId);
     if (note) {
-      notes.set(update.noteId, {
+      storage.set(update.noteId, {
         ...note,
         content: update.content,
         updatedAt: new Date(),
@@ -169,7 +188,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // Add error handling for the server
 httpServer.on("error", (error: Error) => {
@@ -179,8 +198,11 @@ httpServer.on("error", (error: Error) => {
 
 try {
   httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log("Press Ctrl+C to stop");
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(
+      `Allowed origins: ${process.env.CLIENT_URL || "http://localhost:5173"}`
+    );
   });
 } catch (error) {
   console.error("Failed to start server:", error);
