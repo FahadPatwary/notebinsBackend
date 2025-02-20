@@ -15,26 +15,58 @@ interface Note {
   updatedAt: Date;
 }
 
+// CORS Configuration
+const allowedOrigins = [
+  "https://www.notebins.me",
+  "https://notebins.me",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+const corsOptions = {
+  origin: function (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (
+      allowedOrigins.indexOf(origin) !== -1 ||
+      process.env.NODE_ENV !== "production"
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Accept", "Authorization"],
+  maxAge: 600, // Cache preflight requests for 10 minutes
+};
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Accept"],
   },
 });
 
+// Add debug middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log("Origin:", req.headers.origin);
+  console.log("Headers:", req.headers);
+  next();
+});
+
 // Configure CORS for Express
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-    methods: ["GET", "POST", "PUT"],
-    allowedHeaders: ["Content-Type", "Accept"],
-  })
-);
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
