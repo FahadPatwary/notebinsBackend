@@ -22,10 +22,21 @@ const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     methods: ["GET", "POST", "PUT"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Accept"],
   },
 });
 
-app.use(cors());
+// Configure CORS for Express
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT"],
+    allowedHeaders: ["Content-Type", "Accept"],
+  })
+);
+
 app.use(express.json());
 
 // Root endpoint
@@ -41,10 +52,17 @@ app.get("/api/health", (req, res) => {
 // Notes endpoints
 app.post("/api/notes", (req, res) => {
   try {
+    if (!req.body.content && req.body.content !== "") {
+      return res.status(400).json({
+        error: "Content field is required",
+        message: "Please provide content for the note",
+      });
+    }
+
     const noteId = Math.random().toString(36).substring(7);
     const note: Note = {
       id: noteId,
-      content: req.body.content || "",
+      content: req.body.content,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -54,7 +72,10 @@ app.post("/api/notes", (req, res) => {
     res.status(201).json(note);
   } catch (error) {
     console.error("Error creating note:", error);
-    res.status(500).json({ error: "Failed to create note" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to create note. Please try again.",
+    });
   }
 });
 
