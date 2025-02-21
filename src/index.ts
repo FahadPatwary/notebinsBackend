@@ -1,21 +1,14 @@
 import cors from "cors";
 import * as dotenv from "dotenv";
-import express from "express";
+import express, { Request, Response } from "express";
 import { createServer } from "http";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
+import { SavedNote } from "./models/SavedNote";
 import savedNotesRouter from "./routes/savedNotes";
 import { storage } from "./storage";
 
 dotenv.config();
-
-// Interface for Note type
-interface Note {
-  id: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 // CORS Configuration
 const allowedOrigins = [
@@ -172,7 +165,7 @@ function startServer() {
   });
 
   // Notes endpoints
-  app.post("/api/notes", (req, res) => {
+  app.post("/api/notes", async (req: Request, res: Response) => {
     try {
       if (!req.body.content && req.body.content !== "") {
         return res.status(400).json({
@@ -182,16 +175,23 @@ function startServer() {
       }
 
       const noteId = Math.random().toString(36).substring(7);
-      const note: Note = {
-        id: noteId,
+      const note = new SavedNote({
+        noteId,
+        title: "Untitled Note",
         content: req.body.content,
+        url: `${process.env.CLIENT_URL}/${noteId}`,
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      });
 
-      storage.set(noteId, note);
+      await note.save();
       console.log(`Created note: ${noteId}`);
-      res.status(201).json(note);
+      res.status(201).json({
+        id: noteId,
+        content: req.body.content,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
     } catch (error) {
       console.error("Error creating note:", error);
       res.status(500).json({
@@ -201,10 +201,10 @@ function startServer() {
     }
   });
 
-  app.get("/api/notes/:id", (req, res) => {
+  app.get("/api/notes/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const note = storage.get(id);
+      const note = await SavedNote.findOne({ noteId: id });
 
       if (!note) {
         return res.status(404).json({
@@ -213,7 +213,12 @@ function startServer() {
         });
       }
 
-      res.json(note);
+      res.json({
+        id: note.noteId,
+        content: note.content,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
     } catch (error) {
       console.error("Error getting note:", error);
       res.status(500).json({
@@ -223,7 +228,7 @@ function startServer() {
     }
   });
 
-  app.put("/api/notes/:id", (req, res) => {
+  app.put("/api/notes/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { content } = req.body;
@@ -235,7 +240,7 @@ function startServer() {
         });
       }
 
-      const note = storage.get(id);
+      const note = await SavedNote.findOne({ noteId: id });
       if (!note) {
         return res.status(404).json({
           error: "Not Found",
@@ -243,19 +248,21 @@ function startServer() {
         });
       }
 
-      const updatedNote = {
-        ...note,
-        content,
-        updatedAt: new Date(),
-      };
+      note.content = content;
+      note.updatedAt = new Date();
+      await note.save();
 
-      storage.set(id, updatedNote);
       console.log(`Updated note: ${id}`);
 
       // Broadcast the update to all connected clients in the room
       io.to(id).emit("note:update", { noteId: id, content });
 
-      res.json(updatedNote);
+      res.json({
+        id: note.noteId,
+        content: note.content,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
     } catch (error) {
       console.error("Error updating note:", error);
       res.status(500).json({

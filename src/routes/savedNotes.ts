@@ -211,7 +211,7 @@ router.post("/", async (req: Request, res: Response) => {
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { password } = req.body;
+    const password = req.headers["x-note-password"] as string;
 
     // Include password field in query to check protection
     const note = await SavedNote.findById(id).select("+password");
