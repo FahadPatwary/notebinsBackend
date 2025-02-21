@@ -12,7 +12,9 @@ const router = express.Router();
 router.get("/", async (req: Request, res: Response) => {
   try {
     console.log("Fetching saved notes...");
-    const savedNotes = await SavedNote.find().sort({ createdAt: -1 });
+    const savedNotes = await SavedNote.find({})
+      .select("-password") // Exclude password field
+      .sort({ updatedAt: -1 });
 
     // Decompress content if needed
     const decompressedNotes = await Promise.all(
@@ -104,7 +106,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response) => {
   try {
     console.log("Received save note request");
-    const { title, content, noteId, url } = req.body;
+    const { title, content, noteId, url, password } = req.body;
 
     if (!title || !content || !noteId || !url) {
       return res.status(400).json({
@@ -116,7 +118,9 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     // Check if note already exists with this noteId
-    const existingNote = await SavedNote.findOne({ noteId });
+    const existingNote = await SavedNote.findOne({ noteId })
+      .select("+password") // Include password field for verification
+      .exec();
 
     if (existingNote) {
       console.log(`Note with noteId ${noteId} exists, updating...`);
@@ -134,6 +138,8 @@ router.post("/", async (req: Request, res: Response) => {
           contentLength: content.length,
           url, // Update URL in case it changed
           $set: { expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) }, // Reset expiration
+          password: password || undefined,
+          isPasswordProtected: !!password,
         },
         { new: true }
       );
@@ -166,6 +172,8 @@ router.post("/", async (req: Request, res: Response) => {
       url,
       isCompressed,
       contentLength: content.length,
+      password: password || undefined,
+      isPasswordProtected: !!password,
     });
 
     const saved = await savedNote.save();

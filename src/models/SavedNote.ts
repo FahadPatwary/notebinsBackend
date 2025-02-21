@@ -44,6 +44,15 @@ const savedNoteSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Add password protection fields
+  password: {
+    type: String,
+    select: false, // Don't include in default queries
+  },
+  isPasswordProtected: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Update timestamps and extend expiration on save
@@ -53,6 +62,10 @@ savedNoteSchema.pre("save", function (next) {
 
   // Extend expiration time by 3 days from the current update time
   this.expiresAt = new Date(now.getTime() + THREE_DAYS_IN_SECONDS * 1000);
+
+  // Set isPasswordProtected based on password presence
+  this.isPasswordProtected = !!this.password;
+
   next();
 });
 
