@@ -9,6 +9,9 @@
     "watch": "tsc -w",
     "postinstall": "npm run build"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -34,8 +37,5 @@
     "@types/node": "^18.15.11",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
