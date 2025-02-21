@@ -98,11 +98,23 @@ app.get("/api/mongodb/health", async (req, res) => {
 mongoose.set("debug", process.env.NODE_ENV !== "production");
 
 console.log("Attempting to connect to MongoDB...");
+console.log(
+  "Using MongoDB URI:",
+  process.env.MONGODB_URI || "mongodb://localhost:27017/notebins"
+);
+
+if (!process.env.MONGODB_URI) {
+  console.error("WARNING: MONGODB_URI environment variable is not set!");
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/notebins")
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("Connected to MongoDB successfully");
     console.log("Database name:", mongoose.connection.name);
+    console.log("Host:", mongoose.connection.host);
+    console.log("Port:", mongoose.connection.port);
     console.log("Collections:", mongoose.connection.collections);
     startServer();
   })
@@ -112,6 +124,10 @@ mongoose
       message: err.message,
       code: err.code,
       stack: err.stack,
+      uri: process.env.MONGODB_URI?.replace(
+        /(mongodb\+srv:\/\/[^:]+:)([^@]+)(@.*)/,
+        "$1[REDACTED]$3"
+      ),
     });
     process.exit(1);
   });
