@@ -266,7 +266,9 @@ router.delete("/:id", async (req: Request, res: Response) => {
 router.get("/check/:noteId", async (req: Request, res: Response) => {
   try {
     const { noteId } = req.params;
-    const note = await SavedNote.findOne({ noteId });
+    const note = await SavedNote.findOne({ noteId }).select(
+      "-password -content"
+    );
 
     if (!note) {
       return res.status(404).json({
@@ -275,9 +277,10 @@ router.get("/check/:noteId", async (req: Request, res: Response) => {
       });
     }
 
-    // Return the note without content to save bandwidth
-    const { content, ...noteWithoutContent } = note.toObject();
-    res.json(noteWithoutContent);
+    res.json({
+      ...note.toObject(),
+      isPasswordProtected: !!note.password,
+    });
   } catch (error) {
     console.error("Error checking note existence:", error);
     res.status(500).json({
