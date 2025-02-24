@@ -175,22 +175,24 @@ function startServer() {
       }
 
       const noteId = Math.random().toString(36).substring(7);
+      const notePayload = {
+        content: req.body.content || " ",
+        title: "Untitled Note",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
       const note = new SavedNote({
         noteId,
-        title: "Untitled Note",
-        content: req.body.content,
+        ...notePayload,
         url: `${process.env.CLIENT_URL}/${noteId}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       });
 
       await note.save();
       console.log(`Created note: ${noteId}`);
       res.status(201).json({
         id: noteId,
-        content: req.body.content,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
+        ...notePayload,
       });
     } catch (error) {
       console.error("Error creating note:", error);
