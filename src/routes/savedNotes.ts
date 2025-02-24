@@ -35,18 +35,10 @@ router.get("/", async (req: Request, res: Response) => {
     res.json(decompressedNotes);
   } catch (error) {
     console.error("Error fetching saved notes:", error);
-    if (error instanceof Error) {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to fetch saved notes",
-        details: error.message,
-      });
-    } else {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to fetch saved notes",
-      });
-    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to fetch saved notes",
+    });
   }
 });
 
@@ -118,102 +110,46 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     // Check if note already exists with this noteId
-    const existingNote = await SavedNote.findOne({ noteId })
-      .select("+password") // Include password field for verification
-      .exec();
-
+    const existingNote = await SavedNote.findOne({ noteId });
     if (existingNote) {
-      console.log(`Note with noteId ${noteId} exists, updating...`);
-      // If note exists, update it
-      const { compressedContent, isCompressed } = await compressContent(
-        content
-      );
-
-      const updatedNote = await SavedNote.findByIdAndUpdate(
-        existingNote._id,
-        {
-          title,
-          content: compressedContent,
-          isCompressed,
-          contentLength: content.length,
-          url, // Update URL in case it changed
-          $set: { expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) }, // Reset expiration
-          password: password || undefined,
-          isPasswordProtected: !!password,
-        },
-        { new: true }
-      );
-
-      if (!updatedNote) {
-        throw new Error("Failed to update existing note");
-      }
-
-      // Return decompressed content in response
-      const decompressedContent = await decompressContent(
-        updatedNote.content,
-        updatedNote.isCompressed
-      );
-
-      return res.status(200).json({
-        ...updatedNote.toObject(),
-        content: decompressedContent,
-        isNew: false,
+      return res.status(409).json({
+        error: "Conflict",
+        message: "Note with this ID already exists",
       });
     }
 
-    console.log(`Creating new note with noteId ${noteId}`);
-    // If note doesn't exist, create new one
+    // Compress content if needed
     const { compressedContent, isCompressed } = await compressContent(content);
 
-    const savedNote = new SavedNote({
+    const newNote = new SavedNote({
       title,
       content: compressedContent,
       noteId,
       url,
+      password,
       isCompressed,
-      contentLength: content.length,
-      password: password || undefined,
-      isPasswordProtected: !!password,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
-    const saved = await savedNote.save();
-    console.log("Note saved successfully:", saved._id);
-
-    // Return decompressed content in response
-    const decompressedContent = await decompressContent(
-      saved.content,
-      saved.isCompressed
-    );
-
-    res.status(201).json({
-      ...saved.toObject(),
-      content: decompressedContent,
-      isNew: true,
-    });
+    await newNote.save();
+    console.log("Saved new note:", newNote);
+    res.status(201).json(newNote);
   } catch (error) {
     console.error("Error saving note:", error);
-    if (error instanceof Error) {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to save note",
-        details: error.message,
-      });
-    } else {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to save note",
-      });
-    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to save note",
+    });
   }
 });
 
-// DELETE saved note with password check
+// DELETE a saved note
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const password = req.headers["x-note-password"] as string;
+    const { password } = req.query;
 
-    // Include password field in query to check protection
     const note = await SavedNote.findById(id).select("+password");
 
     if (!note) {
@@ -247,18 +183,10 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting saved note:", error);
-    if (error instanceof Error) {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to delete note",
-        details: error.message,
-      });
-    } else {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to delete note",
-      });
-    }
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to delete note",
+    });
   }
 });
 
