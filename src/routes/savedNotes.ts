@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import { SavedNote } from "../models/SavedNote";
 import {
   compressContent,
@@ -10,50 +11,52 @@ const router = express.Router();
 
 // GET all saved notes
 router.get("/:id", async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        // Validate ID format
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ error: "Invalid ID format" });
-        }
-
-        const note = await SavedNote.findById(id).select("+password");
-
-        if (!note) {
-            return res.status(404).json({
-                error: "Not Found",
-                message: "Note not found",
-            });
-        }
-
-        // Check password if note is protected
-        if (note.isPasswordProtected && note.password) {
-            // Password verification logic...
-        }
-
-        // Decompress content
-        let content;
-        try {
-            content = await decompressContent(note.content, note.isCompressed);
-        } catch (decompressError) {
-            console.error("Error decompressing content:", decompressError);
-            return res.status(500).json({ error: "Failed to decompress content" });
-        }
-
-        res.json({
-            ...note.toObject(),
-            content,
-            password: undefined,
-        });
-    } catch (error) {
-        console.error(`Error fetching note with ID ${id}:`, error);
-        res.status(500).json({
-            error: "Internal Server Error",
-            message: "Failed to fetch note",
-        });
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid ID format" });
     }
+
+    const note = await SavedNote.findById(id).select("+password");
+
+    if (!note) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Note not found",
+      });
+    }
+
+    // Check password if note is protected
+    if (note.isPasswordProtected && note.password) {
+      // Password verification logic...
+    }
+
+    // Decompress content
+    let content;
+    try {
+      content = await decompressContent(note.content, note.isCompressed);
+    } catch (decompressError) {
+      console.error("Error decompressing content:", decompressError);
+      return res.status(500).json({ error: "Failed to decompress content" });
+    }
+
+    res.json({
+      ...note.toObject(),
+      content,
+      password: undefined,
+    });
+  } catch (error) {
+    const { id } = req.params; // Capture id here
+    console.error(`Error fetching note with ID ${id}:`, error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to fetch note",
+    });
+  }
 });
+
 // GET a specific note with password check
 router.get("/:id", async (req: Request, res: Response) => {
   try {
