@@ -42,14 +42,14 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// GET a specific note with password check
+// GET a specific note
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { password } = req.query;
+    let password = req.query.password;
 
-    // Include password field in query to check protection
-    const note = await SavedNote.findById(id).select("+password");
+    // Find note without password field
+    const note = await SavedNote.findById(id);
 
     if (!note) {
       return res.status(404).json({
@@ -58,23 +58,17 @@ router.get("/:id", async (req: Request, res: Response) => {
       });
     }
 
-    // Check password if note is protected
-    if (note.isPasswordProtected && note.password) {
-      if (!password) {
-        return res.status(401).json({
-          error: "Unauthorized",
-          message: "Password required to access this note",
-          isPasswordProtected: true,
-        });
-      }
+    // Check if password is an array and extract the first element
+    if (Array.isArray(password)) {
+      password = password[0]; // Get the first element if it's an array
+    }
 
-      if (!verifyPassword(password as string, note.password)) {
-        return res.status(401).json({
-          error: "Unauthorized",
-          message: "Incorrect password",
-          isPasswordProtected: true,
-        });
-      }
+    // Ensure password is a string
+    if (typeof password !== 'string') {
+      return res.status(400).json({
+        error: "Bad Request",
+        message: "Invalid password format",
+      });
     }
 
     // Decompress content if needed
@@ -83,7 +77,6 @@ router.get("/:id", async (req: Request, res: Response) => {
     res.json({
       ...note.toObject(),
       content,
-      password: undefined,
     });
   } catch (error) {
     console.error("Error fetching note:", error);
