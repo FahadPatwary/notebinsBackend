@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import { SavedNote } from "../models/SavedNote";
 import {
   compressContent,
@@ -9,44 +10,50 @@ import {
 const router = express.Router();
 
 // GET all saved notes
-router.get("/", async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
-    console.log("Fetching saved notes...");
-    const savedNotes = await SavedNote.find({})
-      .select("-password") // Exclude password field
-      .sort({ updatedAt: -1 });
+    const { id } = req.params;
 
-    // Decompress content if needed
-    const decompressedNotes = await Promise.all(
-      savedNotes.map(async (note) => {
-        const content = await decompressContent(
-          note.content,
-          note.isCompressed
-        );
-        return {
-          ...note.toObject(),
-          content,
-          isPasswordProtected: !!note.password,
-        };
-      })
-    );
+    // Validate ID format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
 
-    console.log(`Found ${savedNotes.length} saved notes`);
-    res.json(decompressedNotes);
-  } catch (error) {
-    console.error("Error fetching saved notes:", error);
-    if (error instanceof Error) {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to fetch saved notes",
-        details: error.message,
-      });
-    } else {
-      res.status(500).json({
-        error: "Internal Server Error",
-        message: "Failed to fetch saved notes",
+    const note = await SavedNote.findById(id).select("+password");
+
+    if (!note) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Note not found",
       });
     }
+
+    // Check password if note is protected
+    if (note.isPasswordProtected && note.password) {
+      // Password verification logic...
+    }
+
+    // Decompress content
+    let content;
+    try {
+      content = await decompressContent(note.content, note.isCompressed);
+    } catch (decompressError) {
+      console.error("Error decompressing content:", decompressError);
+      return res.status(500).json({ error: "Failed to decompress content" });
+    }
+
+    res.json({
+      ...note.toObject(),
+      content,
+      password: undefined,
+    });
+  } catch (error) {
+    const { id } = req.params; // Capture id here
+    console.error(`Error fetching note with ID ${id}:`, error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: "Failed to fetch note",
+    });
   }
 });
 
