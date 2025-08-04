@@ -18,12 +18,14 @@ interface Note {
 }
 
 // CORS Configuration
-const allowedOrigins = [
-  "https://www.notebins.me",
-  "https://notebins.me",
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : [
+      "https://www.notebins.me",
+      "https://notebins.me",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ];
 
 const corsOptions = {
   origin: function (
@@ -300,7 +302,7 @@ function startServer() {
     });
   });
 
-  const PORT = process.env.PORT || 8080;
+  const PORT = process.env.PORT || 10000;
 
   // Add error handling for the server
   httpServer.on("error", (error: Error) => {
