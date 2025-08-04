@@ -25,12 +25,23 @@ If you encounter `MongoServerError: bad auth : authentication failed`, check:
 
 ### Steps to Fix Authentication:
 
-1. Go to MongoDB Atlas Dashboard
-2. Navigate to "Database Access"
-3. Edit the user `fahadpatwary`
-4. Ensure "Built-in Role" is set to "Read and write to any database"
-5. Reset password if needed (avoid special characters)
-6. Update the MONGODB_URI environment variable
+**IMMEDIATE ACTION REQUIRED:**
+
+1. **Go to MongoDB Atlas Dashboard** (https://cloud.mongodb.com/)
+2. **Navigate to "Database Access"** in the left sidebar
+3. **Find user `fahadpatwary`** and click "Edit"
+4. **Check Built-in Role**: Ensure it's set to "Read and write to any database" or "Atlas admin"
+5. **Reset Password**:
+   - Click "Edit Password"
+   - Generate a new password (avoid special characters like @, :, /, ?, #, [, ], %)
+   - Use only alphanumeric characters for simplicity
+   - Copy the new password
+6. **Update Environment Variables**:
+   - In Render dashboard, go to your service settings
+   - Update `MONGODB_URI` with the new password
+   - Format: `mongodb+srv://fahadpatwary:NEW_PASSWORD@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote`
+7. **Verify Network Access**: Ensure `0.0.0.0/0` is in the IP Access List
+8. **Redeploy**: Trigger a new deployment in Render
 
 ## Deployment on Render
 
