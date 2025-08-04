@@ -23,6 +23,7 @@ const allowedOrigins = process.env.CORS_ORIGIN
   : [
       "https://www.notebins.me",
       "https://notebins.me",
+      "https://notebins.netlify.app",
       "http://localhost:5173",
       "http://localhost:3000",
     ];
