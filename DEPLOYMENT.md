@@ -23,25 +23,34 @@ If you encounter `MongoServerError: bad auth : authentication failed`, check:
 3. **Password**: Avoid special characters that need URL encoding
 4. **Username/Password**: Use database user credentials, not Atlas account credentials
 
-### Steps to Fix Authentication:
+## 🚨 CRITICAL: Fix MongoDB Authentication Error
 
-**IMMEDIATE ACTION REQUIRED:**
+The deployment is failing with "bad auth: authentication failed" because the environment variables in Render are not updated. The URI shows the old password `CBdglAXg0FlYKVvd` instead of the new password `fahad786786`.
 
-1. **Go to MongoDB Atlas Dashboard** (https://cloud.mongodb.com/)
-2. **Navigate to "Database Access"** in the left sidebar
-3. **Find user `fahadpatwary`** and click "Edit"
-4. **Check Built-in Role**: Ensure it's set to "Read and write to any database" or "Atlas admin"
-5. **Reset Password**:
-   - Click "Edit Password"
-   - Generate a new password (avoid special characters like @, :, /, ?, #, [, ], %)
-   - Use only alphanumeric characters for simplicity
-   - Copy the new password
-6. **Update Environment Variables**:
-   - In Render dashboard, go to your service settings
-   - Update `MONGODB_URI` with the new password
-   - Format: `mongodb+srv://fahadpatwary:NEW_PASSWORD@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote`
-7. **Verify Network Access**: Ensure `0.0.0.0/0` is in the IP Access List
-8. **Redeploy**: Trigger a new deployment in Render
+### IMMEDIATE ACTION REQUIRED:
+
+#### Step 1: Update Environment Variables in Render Dashboard
+1. **Go to [Render Dashboard](https://dashboard.render.com/)**
+2. **Select your backend service (notebinsBackend)**
+3. **Click "Environment" in the left sidebar**
+4. **Find the `MONGODB_URI` environment variable**
+5. **Update it to:**
+   ```
+   mongodb+srv://fahadpatwary:fahad786786@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
+   ```
+6. **Select "Save, rebuild, and deploy" from the dropdown**
+7. **Click Save Changes**
+
+#### Step 2: Verify MongoDB Atlas Settings
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
+2. **Database Access**: Ensure user `fahadpatwary` exists with password `fahad786786`
+3. **Network Access**: Ensure `0.0.0.0/0` is in the IP Access List
+4. **Database**: Ensure database `notebins` exists
+
+#### Step 3: Monitor Deployment
+1. Wait for Render to complete the deployment
+2. Check the deployment logs for "MongoDB connected successfully"
+3. Test the frontend connection
 
 ## Deployment on Render
 
