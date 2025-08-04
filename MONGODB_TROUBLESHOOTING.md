@@ -21,6 +21,8 @@ The error persists because **environment variables in Render are NOT automatical
    ```
    mongodb+srv://fahadpatwary:H542CdNlCqnDwoE8@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
    ```
+   
+   **Note**: If you see a template like `mongodb+srv://fahadpatwary:<db_password>@savednote.iji1p.mongodb.net/?retryWrites=true&w=majority&appName=SavedNote`, replace `<db_password>` with your actual password: `H542CdNlCqnDwoE8` and add `/notebins` after the cluster URL.
 7. **Select "Save, rebuild, and deploy"**
 8. **Click "Save Changes"**
 
