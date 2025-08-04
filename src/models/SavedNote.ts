@@ -30,7 +30,6 @@ const savedNoteSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     default: () => new Date(Date.now() + THREE_DAYS_IN_SECONDS * 1000),
-    index: { expires: 0 }, // Use TTL index on expiresAt field
   },
   // For efficient storage
   contentLength: {
