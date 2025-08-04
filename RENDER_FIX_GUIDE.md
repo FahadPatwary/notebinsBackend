@@ -1,7 +1,7 @@
 # 🚨 RENDER DASHBOARD FIX - Step by Step
 
 ## The Problem
-Your deployment logs show the old password `CBdglAXg0FlYKVvd` instead of the new password `fahad786786`. This means the environment variable in Render dashboard was never updated.
+Your deployment logs show the old password `CBdglAXg0FlYKVvd` instead of the new password `H542CdNlCqnDwoE8`. This means the environment variable in Render dashboard was never updated.
 
 ## SOLUTION: Update Environment Variables in Render Dashboard
 
@@ -23,7 +23,7 @@ Your deployment logs show the old password `CBdglAXg0FlYKVvd` instead of the new
 2. Click the **"Edit"** button (pencil icon) next to it
 3. In the Value field, replace the entire URI with:
    ```
-   mongodb+srv://fahadpatwary:fahad786786@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
+   mongodb+srv://fahadpatwary:H542CdNlCqnDwoE8@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
    ```
 4. Make sure there are no extra spaces or characters
 
@@ -42,12 +42,12 @@ Your deployment logs show the old password `CBdglAXg0FlYKVvd` instead of the new
 If MONGODB_URI doesn't exist in the Environment tab:
 1. Click **"+ Add Environment Variable"**
 2. Set Key: `MONGODB_URI`
-3. Set Value: `mongodb+srv://fahadpatwary:fahad786786@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote`
+3. Set Value: `mongodb+srv://fahadpatwary:H542CdNlCqnDwoE8@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote`
 4. Click **"Save Changes"** and select **"Save, rebuild, and deploy"**
 
 ## Expected Result
 After following these steps:
-- The deployment logs should show the new password `fahad786786`
+- The deployment logs should show the new password `H542CdNlCqnDwoE8`
 - MongoDB connection should succeed
 - The "bad auth: authentication failed" error should disappear
 - Your frontend should be able to connect to the backend

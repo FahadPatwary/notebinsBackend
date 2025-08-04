@@ -25,7 +25,7 @@ If you encounter `MongoServerError: bad auth : authentication failed`, check:
 
 ## 🚨 CRITICAL: Fix MongoDB Authentication Error
 
-The deployment is failing with "bad auth: authentication failed" because the environment variables in Render are not updated. The URI shows the old password `CBdglAXg0FlYKVvd` instead of the new password `fahad786786`.
+The deployment is failing with "bad auth: authentication failed" because the environment variables in Render are not updated. The URI shows the old password `CBdglAXg0FlYKVvd` instead of the new password `H542CdNlCqnDwoE8`.
 
 ### IMMEDIATE ACTION REQUIRED:
 
@@ -36,14 +36,14 @@ The deployment is failing with "bad auth: authentication failed" because the env
 4. **Find the `MONGODB_URI` environment variable**
 5. **Update it to:**
    ```
-   mongodb+srv://fahadpatwary:fahad786786@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
+   mongodb+srv://fahadpatwary:H542CdNlCqnDwoE8@savednote.iji1p.mongodb.net/notebins?retryWrites=true&w=majority&appName=SavedNote
    ```
 6. **Select "Save, rebuild, and deploy" from the dropdown**
 7. **Click Save Changes**
 
 #### Step 2: Verify MongoDB Atlas Settings
 1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
-2. **Database Access**: Ensure user `fahadpatwary` exists with password `fahad786786`
+2. **Database Access**: Ensure user `fahadpatwary` exists with password `H542CdNlCqnDwoE8`
 3. **Network Access**: Ensure `0.0.0.0/0` is in the IP Access List
 4. **Database**: Ensure database `notebins` exists
 
